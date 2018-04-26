@@ -4,8 +4,7 @@ A crawler for IGCSE past papers on PapaCambridge.
 
 ## Usage
 
-1. Run the program.
-
+1. Run the program.  
 `python PapaCambridge.py`
 
 2. Type in the 4-digit course codes you want to crawl, multiple course codes should be separated by a space.  
