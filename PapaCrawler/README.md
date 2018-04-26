@@ -23,8 +23,13 @@ For example, `08-15` will only download all available papers from 2008 to 2015, 
 
 ## Document Types
 
-- **`qp`**: Question paper
-- **`ms`**: Mark scheme
+- **`qp`** - Question paper
+- **`ms`** - Mark scheme
+- **`in`** - Insert
+- **`pre`** - Pre-release
+- **`gt`** - Grade thresholds
+- **`er`** - Examiner report
+- **`ir`** - Instrument requirements (?)
 
 ## Changelog
 
