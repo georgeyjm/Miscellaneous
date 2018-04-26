@@ -82,9 +82,12 @@ def downloadFile(url, dirName):
 
 try:
     courses = input('Input the course codes, separate using spaces: ').split(' ')
-    papers = input('Input the paper numbers, separate using spaces (default: all): ').split(' ') or [str(i) for i in range(10)]
-    types = input('Inpute the types of document, separate using spaces (default: qp ms in pre): ').split(' ') or ['qp', 'ms', 'in', 'pre']
-    years = list(map(int, input('Input the range of years (last two digit), separate by a dash(-) (default: all): ').split('-'))) or [0, 99]
+    papers = input('Input the paper numbers, separate using spaces (default: all): ') or '0123456789'
+    types = input('Inpute the types of document, separate using spaces (default: qp ms in pre): ') or 'qp ms in pre'
+    years = input('Input the range of years (last two digit), separate by a dash(-) (default: all): ') or '0-99'
+    papers = papers.split(' ')
+    types = types.split(' ')
+    years = list(map(int, years.split('-')))
     logger.info('Getting course URLs')
 
     for courseName, courseUrl in getCourseUrls(*courses):
