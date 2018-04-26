@@ -13,7 +13,7 @@ For example, `0620 0625 0500` will download the past papers for Chemistry (0620)
 3. Type in the paper numbers you want to crawl, multiple paper numbers should be separated by a space. If you don't input anything, the program will default to download all available papers.  
 For example, `1 2 3` will only download all available papers 1, 2 and 3.
 
-4. Type in the document types you want to crawl, multiple document types should be separated by a space. If you don't input anything, the program will default to download `qp`, `ms`, `in` and `pre`, a list of available document types can be found [here](#Document-Types).  
+4. Type in the document types you want to crawl, multiple document types should be separated by a space. If you don't input anything, the program will default to download `qp`, `ms`, `in` and `pre`, a list of available document types can be found [here](#document-types).  
 For example, `qp ms` will only download question papers and mark schemes.
 
 5. Type in the last two digits of the range of years you want to crawl, separated by a dash (`-`). If you don't input anything, the program will default to download papers from any year.  
