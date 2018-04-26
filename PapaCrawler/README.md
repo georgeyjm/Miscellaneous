@@ -21,6 +21,11 @@ For example, `08-15` will only download all available papers from 2008 to 2015, 
 
 6. Wait and enjoy studying!
 
+## Document Types
+
+- **`qp`**: Question paper
+- **`ms`**: Mark scheme
+
 ## Changelog
 
 **2018-04-26:**
