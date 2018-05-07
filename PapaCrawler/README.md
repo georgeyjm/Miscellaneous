@@ -4,8 +4,9 @@ A crawler for IGCSE past papers on PapaCambridge.
 
 ## Usage
 
-1. Run the program.  
-`python PapaCambridge.py`
+1. Run the program.
+
+```python PapaCambridge.py```
 
 2. Type in the 4-digit course codes you want to crawl, multiple course codes should be separated by a space.  
 For example, `0620 0625 0500` will download the past papers for Chemistry (0620), Physics (0625) and English as First Language (0500)
@@ -26,7 +27,7 @@ For example, `08-15` will only download all available papers from 2008 to 2015, 
 - **`qp`** - Question paper
 - **`ms`** - Mark scheme
 - **`in`** - Insert
-- **`pre`** - Pre-release
+- **`pre`**, **`pm`** - Pre-release
 - **`gt`** - Grade thresholds
 - **`er`** - Examiner report
 - **`ir`** - Instrument requirements (?)
