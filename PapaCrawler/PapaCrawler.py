@@ -8,8 +8,10 @@ import time
 from utils import *
 
 MAX_THREAD = 30
+SORT_BY_YEAR = True
+SORT_BY_PAPER = True
 ROOT_DIR = Path('PapaCambridge')
-ROOT_URL = 'http://pastpapers.papacambridge.com/'
+ROOT_URL = 'https://pastpapers.co'
 
 logger = Logger('PapaCrawler')
 
@@ -28,43 +30,57 @@ def getUrl(url, **options):
     else:
         return web
 
-def getCourseUrls(*courses):
-    courses = list(courses)
+def iterate_page_items(url, selector='a.item.dir'):
+    web = getUrl(url)
+    if web == -1:
+        return -1
+    soup = BeautifulSoup(web.text, 'lxml')
+    for item in soup.select(selector):
+        if item.get_text().strip() == '..':
+            continue
+        yield item
+
+def getCourseUrls(*courseIds):
+    courseIds = list(courseIds)
     # regex = re.compile(r'(?:.* \((\d{4})\))|(?:.* - (\d{4}))')
-    regex = re.compile(r'\d{4}')
-    url = ROOT_URL + '?dir=Cambridge%20International%20Examinations%20%28CIE%29/IGCSE'
+    regex = re.compile(r'.+-(\d{4})')
+    url = ROOT_URL + '/cie/?dir=IGCSE'
     web = getUrl(url)
     if web == -1:
         exit()
     soup = BeautifulSoup(web.text, 'lxml')
-    for courseTitle in soup.select('span.file-name'):
-        courseId = regex.findall(courseTitle.get_text())
-        if courseId and courseId[0] in courses:
-            courses.remove(courseId[0])
-            yield courseTitle.get_text().strip(), ROOT_URL + courseTitle.parent.parent.get('href')
-    if courses:
-        logger.warning('Course code(s) not found: {}'.format(', '.join(courses)))
-
-def getPaperUrls(courseUrl):
-    regex = re.compile(r'[0-9]{4}_[swm]([0-9]{1,2})_(?:' + '|'.join(types) + r')_[' + ''.join(papers) + r'][0-9]\.pdf')
-    courseWeb = getUrl(courseUrl)
-    if courseWeb == -1:
-        return -1
-    courseSoup = BeautifulSoup(courseWeb.text, 'lxml')
-    for folder in courseSoup.select('span.file-name'):
-        if folder.get_text().strip() == '..':
+    for course in soup.select('a.item.dir'):
+        result = regex.findall(course.get_text().strip())
+        if not result:
             continue
-        web = getUrl(ROOT_URL + folder.parent.parent.get('href'))
-        if web == -1:
-            return -1
-        soup = BeautifulSoup(web.text, 'lxml')
-        for file in soup.select('span.file-name'):
-            year = regex.findall(file.get_text())
-            if year and years[0] <= int(year[0]) <= years[1]:
-                yield ROOT_URL + file.parent.parent.get('href').replace('view.php?id=', '')
+        courseId = result[0]
+        if courseId in courseIds:
+            courseIds.remove(courseId)
+            yield course.get_text().strip(), ROOT_URL + course.get('href')
+    if courseIds:
+        logger.warning('Course code(s) not found: {}'.format(', '.join(courseIds)))
 
-def downloadFile(url, dirName):
-    name = url.split('/')[-1]
+def getPaperUrls(courseName, courseUrl):
+    regex = re.compile(r'[0-9]{4}_([swm])([0-9]{1,2})_(' + '|'.join(types) + r')_([' + ''.join(papers) + r'][0-9])\.pdf')
+    for yearFolder in iterate_page_items(courseUrl):
+        yearText = yearFolder.get_text().strip()
+        for monthFolder in iterate_page_items(ROOT_URL + yearFolder.get('href')):
+            monthText = monthFolder.get_text().strip()
+            for file in iterate_page_items(ROOT_URL + monthFolder.get('href'), 'a.item.pdf'):
+                filename = file.get_text().strip()
+                info = regex.findall(filename)
+                if info and years[0] <= int(info[0][1]) <= years[1]:
+                    fileUrl = '{}/cie/IGCSE/{}/{}/{}/{}'.format(ROOT_URL, courseName, yearText, monthText, filename)
+                    if SORT_BY_YEAR:
+                        monthChar, yearNum = info[0][:2]
+                        filename = filename.replace(monthChar + yearNum, yearNum + monthChar)
+                    if SORT_BY_PAPER:
+                        paperType, paperId = info[0][2:]
+                        filename = filename.replace('{}_{}'.format(paperType, paperId), '{}_{}'.format(paperId, paperType))
+                    yield fileUrl, filename
+
+def downloadFile(url, dirName, filename=None):
+    name = filename or url.split('/')[-1]
     req = getUrl(url, timeout=60, stream=True)
     if req == -1:
         return -1
@@ -74,7 +90,7 @@ def downloadFile(url, dirName):
                 req.raw.decode_content = True
                 shutil.copyfileobj(req.raw, file)
             except Exception as e:
-                logger.error('Uncaught exception ({}): {} when copying file object: {}'.format(e.__class__.__name__, e, name))
+                logger.error('Uncaught exception ({}): {} when copying file object "{}" from URL "{}"'.format(e.__class__.__name__, e, name, url))
                 return -1
     else:
         logger.error('Error response [{}], url: {}'.format(req.status_code, url))
@@ -91,17 +107,20 @@ try:
     logger.info('Getting course URLs')
 
     for courseName, courseUrl in getCourseUrls(*courses):
-        logger.info('Crawling: \033[4m{}\033[0m'.format(courseName))
-        (ROOT_DIR / courseName).mkdir(parents=True, exist_ok=True)
-        allPapers = list(getPaperUrls(courseUrl))
+        regex = re.compile(r'(.+)-(\d{4})')
+        courseTitle, courseCode = regex.findall(courseName)[0]
+        courseNameBeautified = '{} ({})'.format(' '.join(courseTitle.split('-')), courseCode)
+        logger.info('Crawling: \033[4m{}\033[0m'.format(courseNameBeautified))
+        (ROOT_DIR / courseNameBeautified).mkdir(parents=True, exist_ok=True)
+        allPapers = list(getPaperUrls(courseName, courseUrl))
         if not allPapers:
             logger.info('No files match your requirements!')
             continue
         logger.info('Downloading {} files'.format(len(allPapers)))
 
         threadPool = []
-        for fileUrl in allPapers:
-            thread = Thread(target=downloadFile, args=(fileUrl, courseName))
+        for fileUrl, filename in allPapers:
+            thread = Thread(target=downloadFile, args=(fileUrl, courseNameBeautified, filename))
             threadPool.append(thread)
             if len(threadPool) == MAX_THREAD:
                 for thread in threadPool:
