@@ -34,6 +34,11 @@ For example, `08-15` will only download all available papers from 2008 to 2015, 
 
 ## Changelog
 
+**2018-05-10:**
+- Change code to support the updated site to `pastpapers.co`
+- Remove support for the deprecated site `papacambridge.com`
+- Add support for sort the files by paper and by year
+
 **2018-04-26:**
 - Fix bug where default values won't match any file
 - First public release!
